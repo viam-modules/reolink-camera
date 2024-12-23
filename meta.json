@@ -1,0 +1,24 @@
+{
+  "$schema": "https://dl.viam.dev/module.schema.json",
+  "module_id": "viam:reolink",
+  "visibility": "private",
+  "url": "https://github.com/viam-modules/reolink-camera",
+  "description": "Reolink camera driver. It supports cameras that support the Reolink API. It is highly recommended to use the rtsp or ffmpeg models unless Reolink-specific functionality is needed.",
+  "models": [
+    {
+      "api": "rdk:component:camera",
+      "model": "viam:camera:reolink"
+    }
+  ],
+  "entrypoint": "dist/main",
+  "first_run": "",
+  "build": {
+    "build": "./build.sh",
+    "setup": "./setup.sh",
+    "path": "dist/archive.tar.gz",
+    "arch": [
+      "linux/any",
+      "darwin/any"
+    ]
+  }
+}

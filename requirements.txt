@@ -1,0 +1,6 @@
+viam-sdk
+reolinkapi
+typing-extensions
+Pillow
+reolinkapi[streaming]
+#/Users/stevebriskin/workspace/reolinkapipy
