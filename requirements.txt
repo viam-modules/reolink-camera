@@ -1,3 +1,4 @@
+setuptools
 viam-sdk
 reolinkapi
 typing-extensions
