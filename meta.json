@@ -11,14 +11,14 @@
     }
   ],
   "entrypoint": "dist/main",
-  "first_run": "",
   "build": {
     "build": "./build.sh",
     "setup": "./setup.sh",
     "path": "dist/archive.tar.gz",
     "arch": [
-      "linux/any",
-      "darwin/any"
+      "linux/arm64",
+      "linux/amd64",
+      "darwin/arm64"
     ]
   }
 }

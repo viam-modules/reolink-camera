@@ -4,27 +4,36 @@ cd `dirname $0`
 # Create a virtual environment to run our code
 VENV_NAME="venv"
 PYTHON="$VENV_NAME/bin/python"
-ENV_ERROR="This module requires Python >=3.8, pip, and virtualenv to be installed."
+PYENV="$PYENV_ROOT/bin/pyenv"
+PYTHON_VERSION="3.12"
 
-if ! python3 -m venv $VENV_NAME >/dev/null 2>&1; then
-    echo "Failed to create virtualenv."
-    if command -v apt-get >/dev/null; then
-        echo "Detected Debian/Ubuntu, attempting to install python3-venv automatically."
-        SUDO="sudo"
-        if ! command -v $SUDO >/dev/null; then
-            SUDO=""
-        fi
-		if ! apt info python3-venv >/dev/null 2>&1; then
-			echo "Package info not found, trying apt update"
-			$SUDO apt -qq update >/dev/null
-		fi
-        $SUDO apt install -qqy python3-venv >/dev/null 2>&1
-        if ! python3 -m venv $VENV_NAME >/dev/null 2>&1; then
-            echo $ENV_ERROR >&2
+# Check if pyenv is installed and install Python version if needed
+if command -v $PYENV >/dev/null; then
+    echo "pyenv found, checking Python version..."
+    if ! $PYENV versions | grep -q $PYTHON_VERSION; then
+        echo "Installing Python $PYTHON_VERSION using pyenv..."
+        if ! $PYENV install $PYTHON_VERSION -s; then
+            echo "Failed to install Python $PYTHON_VERSION" >&2
             exit 1
         fi
-    else
-        echo $ENV_ERROR >&2
+    fi
+
+    # Set local Python version and create virtualenv
+    if ! $PYENV local $PYTHON_VERSION; then
+        echo "Failed to set local Python version" >&2
+        exit 1
+    fi
+fi
+
+# Check if Python version meets minimum requirement
+if ! python3 -c "import sys; exit(0 if sys.version_info >= tuple(map(int, '$PYTHON_VERSION'.split('.'))) else 1)" 2>/dev/null; then
+    echo "Python version $PYTHON_VERSION or higher is required" >&2
+    exit 1
+fi
+
+# Create a virtual environment
+if ! python3 -m venv $VENV_NAME >/dev/null 2>&1; then
+    echo "Failed to create virtualenv."
         exit 1
     fi
 fi
