@@ -62,7 +62,7 @@ class Reolink(Camera, EasyResource):
             self.camera = ReolinkCamera(attributes['host'], 
                                       attributes['username'], 
                                       attributes['password'], 
-                                      attributes.get('https', True))
+                                      attributes.get('https', False))
             # Test the connection
             self.camera.login()
         except Exception as e:
