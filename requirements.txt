@@ -1,8 +1,7 @@
 setuptools
 viam-sdk
-reolinkapi
+reolinkapi @ git+https://github.com/stevebriskin/reolinkapipy.git
 typing-extensions
 Pillow
-reolinkapi[streaming]
+reolinkapi[streaming] @ git+https://github.com/stevebriskin/reolinkapipy.git
 PyInstaller
-#/Users/stevebriskin/workspace/reolinkapipy

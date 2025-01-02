@@ -88,27 +88,8 @@ class Reolink(Camera, EasyResource):
             self.LOGGER.warning(f"get_snap() took {time.time() - start_time:.2f} seconds")
             self.LOGGER.warning(f"Received image mime type: {image_data.format}, mode: {image_data.mode}, data size: {len(image_data.tobytes())} bytes")
             
-        start_time = time.time()
         viam_image = pil_to_viam_image(image_data, CameraMimeType.JPEG)
-        
-        if self.debug:
-            self.LOGGER.warning(f"pil_to_viam_image() took {time.time() - start_time:.2f} seconds")
-            self.LOGGER.warning(f"viam_image size: {len(viam_image.data)} bytes")
 
-
-        if self.debug:
-            # Save both original PIL image and converted Viam image with timestamps
-            timestamp = int(time.time())
-            
-            # Save PIL image
-            pil_path = f"/tmp/reolink_pil_{timestamp}.{image_data.format.lower()}"
-            image_data.save(pil_path)
-            
-            # Save Viam image 
-            viam_path = f"/tmp/reolink_viam_{timestamp}.jpg"
-            with open(viam_path, "wb") as f:
-                f.write(viam_image.data)
-            
         return viam_image
 
     async def get_images(
@@ -129,63 +110,66 @@ class Reolink(Camera, EasyResource):
         result = {}
 
         for cmd_name, cmd_args in command.items():
+            self.logger.info(f"command: {cmd_name}, args: {cmd_args}")
             result[cmd_name] = {}
-
-            self.logger.warning(f"command: {cmd_name}, args: {cmd_args}, type: {type(cmd_args)}")
-
-            # TODO: figure out how to parse a map out of command
+            
             parsed_args = {}
+            if isinstance(cmd_args, Mapping):
+                parsed_args = cmd_args
+            else:
+                self.logger.warning(f"received non-map do_command arguments for {cmd_name}, skipping this command.")
+                result[cmd_name]["error"] = "Non-map argument provided. Ignored."
+                continue;
 
+            # TODO: add more commands and arguments for commands that take them.
             match cmd_name:
                 # Movement. From https://github.com/ReolinkCameraAPI/reolinkapipy/blob/master/reolinkapi/mixins/ptz.py
                 case "ptz_move_right":
                     ret = self.camera.move_right()
-                    result[cmd_name]["result"] = ret
+                    result[cmd_name] = ret
                 case "ptz_move_left":
                     ret = self.camera.move_left()
-                    result[cmd_name]["result"] = ret
+                    result[cmd_name] = ret
                 case "ptz_stop":
                     ret = self.camera.stop_ptz()
-                    result[cmd_name]["result"] = ret
+                    result[cmd_name] = ret
                 case "ptz_move_up":
                     ret = self.camera.move_up()
-                    result[cmd_name]["result"] = ret
+                    result[cmd_name] = ret
                 case "ptz_move_down":
                     ret = self.camera.move_down()
-                    result[cmd_name]["result"] = ret
+                    result[cmd_name] = ret
                 case "ptz_move_right_up":
                     ret = self.camera.move_right_up()
-                    result[cmd_name]["result"] = ret
+                    result[cmd_name] = ret
                 case "ptz_move_right_down":
                     ret = self.camera.move_right_down()
-                    result[cmd_name]["result"] = ret
+                    result[cmd_name] = ret
                 case "ptz_move_left_up":
                     ret = self.camera.move_left_up()
-                    result[cmd_name]["result"] = ret
+                    result[cmd_name] = ret
                 case "ptz_move_left_down":
                     ret = self.camera.move_left_down()
-                    result[cmd_name]["result"] = ret
+                    result[cmd_name] = ret
                 case "ptz_go_to_preset":
-                    ret = self.camera.go_to_preset()
-                    result[cmd_name]["result"] = ret
+                    ret = self.camera.go_to_preset(index=int(parsed_args["id"]))
+                    time.sleep(4)
+                    result[cmd_name] = ret
                 case "ptz_add_preset":
-                    ret = self.camera.add_preset()
-                    result[cmd_name]["result"] = ret
+                    ret = self.camera.add_preset(preset=int(parsed_args["id"]), name=int(parsed_args["name"]))
+                    result[cmd_name] = ret
                 case "ptz_remove_preset":
-                    ret = self.camera.remove_preset()
-                    result[cmd_name]["result"] = ret
+                    ret = self.camera.remove_preset(preset=int(parsed_args["id"]), name=int(parsed_args["name"]))
+                    result[cmd_name] = ret
                 case "ptz_perform_calibration":
                     ret = self.camera.perform_calibration()
-                    result[cmd_name]["result"] = ret
+                    result[cmd_name] = ret
                 case "ptz_get_presets":
                     ret = self.camera.get_ptz_presets()
-                    result[cmd_name]["result"] = ret
-                case "ptz_get_check_state":
+                    result[cmd_name] = ret
+                case "ptz_check_calibrationstate":
                     ret = self.camera.get_ptz_check_state()
-                    result[cmd_name]["result"] = ret
-                case "ptz_auto_movement":
-                    ret = self.camera.auto_movement()
-                    result[cmd_name]["result"] = ret
+                    result[cmd_name] = ret
 
                 # Zoom and Focus. From https://github.com/ReolinkCameraAPI/reolinkapipy/blob/master/reolinkapi/mixins/zoom.py
                 case "ptz_start_zooming_in":
@@ -206,12 +190,25 @@ class Reolink(Camera, EasyResource):
                 case "ptz_stop_focusing":
                     ret = self.camera.stop_focusing()
                     result[cmd_name]["result"] = ret
-
-
-                # TODO: add move, zoom, focus to specific values commands after they're added to the python api.
+                case "get_zoom_focus":
+                    ret = self.camera.get_zoom_focus()
+                    result[cmd_name]["result"] = ret
+                case "start_zoom_pos":
+                    ret = self.camera.start_zoom_pos(position=int(parsed_args["position"]))
+                    result[cmd_name]["result"] = ret
+                case "start_focus_pos":
+                    ret = self.camera.start_focus_pos(position=int(parsed_args["position"]))
+                    result[cmd_name]["result"] = ret
+                case "get_auto_focus":
+                    ret = self.camera.get_auto_focus()
+                    result[cmd_name]["result"] = ret
+                case "set_auto_focus":
+                    ret = self.camera.set_auto_focus(disable=bool(parsed_args["disable"]))
+                    result[cmd_name]["result"] = ret
+        
 
                 case _:
-                    result["error"] = f"Unknown command: {command}"
+                    result[cmd_name]["error"] = f"Unknown command: {command}"
 
         return result
 
