@@ -8,7 +8,8 @@ Official and unofficial documentation of the Reolink HTTP API can be found [here
 Model name: `viam:camera:reolink`
 
 ## Requirements
-Python 3.12+ is required.
+- Python 3.12+ is required.
+- A Reolink camera that supports the HTTP API.
 
 ## Module Configuration
 
@@ -83,7 +84,6 @@ Example Response:
 ```
 
 ## Camera Control Commands
-TODO: Add more commands and arguments.
 
 | Command | Description | Arguments |
 |---------|-------------|-----------|
