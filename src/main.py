@@ -37,7 +37,7 @@ class Reolink(Camera, EasyResource):
         cls, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]
     ) -> Self:
         my_class = cls(config.name)
-        #my_class.reconfigure(config, dependencies)
+        my_class.reconfigure(config, dependencies)
         return my_class
 
     @classmethod
