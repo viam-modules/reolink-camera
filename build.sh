@@ -1,5 +1,7 @@
-#!/bin/sh
+#!/bin/bash
 cd `dirname $0`
+
+echo `pwd`
 
 source "$HOME/.local/bin/env"
 source .venv/bin/activate
