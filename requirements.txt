@@ -4,4 +4,5 @@ reolinkapi
 typing-extensions
 Pillow
 reolinkapi[streaming]
+PyInstaller
 #/Users/stevebriskin/workspace/reolinkapipy
