@@ -11,6 +11,10 @@ Model name: `viam:camera:reolink`
 - Python 3.12+ is required.
 - A Reolink camera that supports the HTTP API.
 
+## Limitations
+- Only GetImage is supported. This means the stream will be limited to ~2fps and highly susceptible to CPU load and network latency.
+- PTZ controls are likely to change in the future.
+
 ## Module Configuration
 
 The module can be added to the machine configuration with the following snippet:
@@ -84,6 +88,9 @@ Example Response:
 ```
 
 ## Camera Control Commands
+
+> ⚠️ **Warning**: These are likely to change in future versions.
+
 
 | Command | Description | Arguments |
 |---------|-------------|-----------|
