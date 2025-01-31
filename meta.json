@@ -7,7 +7,9 @@
   "models": [
     {
       "api": "rdk:component:camera",
-      "model": "viam:camera:reolink"
+      "model": "viam:camera:reolink",
+      "short_description": "Reolink camera driver with PTZ controls.",
+      "markdown_link" : "README.md#model-configuration"
     }
   ],
   "entrypoint": "dist/main",
