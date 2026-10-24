@@ -1,8 +1,7 @@
 import asyncio
 import logging
 import time
-from typing import (Any, ClassVar, Dict, Final, List, Mapping, Optional,
-                    Sequence, Tuple)
+from typing import Any, ClassVar, Dict, Final, List, Mapping, Optional, Sequence, Tuple
 
 from typing_extensions import Self
 from viam.components.camera import *
@@ -24,14 +23,12 @@ from viam.resource.registry import Registry, ResourceCreatorRegistration
 
 
 class Reolink(Camera, EasyResource):
-    MODEL: ClassVar[Model] = Model(
-        ModelFamily("viam", "camera"), "reolink"
-    )
+    MODEL: ClassVar[Model] = Model(ModelFamily("viam", "camera"), "reolink")
     LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
-    
+
     camera: ReolinkCamera = None
     debug: bool = False
-    
+
     @classmethod
     def new(
         cls, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]
@@ -43,9 +40,15 @@ class Reolink(Camera, EasyResource):
     @classmethod
     def validate_config(cls, config: ComponentConfig) -> Sequence[str]:
         attributes = struct_to_dict(config.attributes)
-        if 'host' not in attributes or 'username' not in attributes or 'password' not in attributes:
-            raise ValueError("Missing required fields in config: 'host', 'username', and 'password' are required.")
-        
+        if (
+            "host" not in attributes
+            or "username" not in attributes
+            or "password" not in attributes
+        ):
+            raise ValueError(
+                "Missing required fields in config: 'host', 'username', and 'password' are required."
+            )
+
         return []
 
     def reconfigure(
@@ -54,21 +57,23 @@ class Reolink(Camera, EasyResource):
         if self.camera is not None:
             self.camera.logout()
             self.camera = None
-        
+
         attributes = struct_to_dict(config.attributes)
-        self.debug = attributes['debug']
-        
+        self.debug = attributes["debug"]
+
         try:
-            self.camera = ReolinkCamera(attributes['host'], 
-                                      attributes['username'], 
-                                      attributes['password'], 
-                                      attributes.get('https', False))
+            self.camera = ReolinkCamera(
+                attributes["host"],
+                attributes["username"],
+                attributes["password"],
+                attributes.get("https", False),
+            )
             # Test the connection
             self.camera.login()
         except Exception as e:
             self.LOGGER.error(f"Failed to connect to Reolink camera: {str(e)}")
             raise RuntimeError(f"Failed to initialize Reolink camera: {str(e)}")
-        
+
         return self
 
     async def get_image(
@@ -77,17 +82,21 @@ class Reolink(Camera, EasyResource):
         *,
         extra: Optional[Dict[str, Any]] = None,
         timeout: Optional[float] = None,
-        **kwargs
+        **kwargs,
     ) -> ViamImage:
         # TODO: check if camera is connected? not sure if this is needed of the library handles it
-        
+
         start_time = time.time()
         image_data: Image.Image = self.camera.get_snap()
-        
+
         if self.debug:
-            self.LOGGER.warning(f"get_snap() took {time.time() - start_time:.2f} seconds")
-            self.LOGGER.warning(f"Received image mime type: {image_data.format}, mode: {image_data.mode}, data size: {len(image_data.tobytes())} bytes")
-            
+            self.LOGGER.warning(
+                f"get_snap() took {time.time() - start_time:.2f} seconds"
+            )
+            self.LOGGER.warning(
+                f"Received image mime type: {image_data.format}, mode: {image_data.mode}, data size: {len(image_data.tobytes())} bytes"
+            )
+
         viam_image = pil_to_viam_image(image_data, CameraMimeType.JPEG)
 
         return viam_image
@@ -104,7 +113,7 @@ class Reolink(Camera, EasyResource):
         command: Mapping[str, ValueTypes],
         *,
         timeout: Optional[float] = None,
-        **kwargs
+        **kwargs,
     ) -> Dict[str, Any]:
 
         result = {}
@@ -112,14 +121,16 @@ class Reolink(Camera, EasyResource):
         for cmd_name, cmd_args in command.items():
             self.logger.info(f"command: {cmd_name}, args: {cmd_args}")
             result[cmd_name] = {}
-            
+
             parsed_args = {}
             if isinstance(cmd_args, Mapping):
                 parsed_args = cmd_args
             else:
-                self.logger.warning(f"received non-map do_command arguments for {cmd_name}, skipping this command.")
+                self.logger.warning(
+                    f"received non-map do_command arguments for {cmd_name}, skipping this command."
+                )
                 result[cmd_name]["error"] = "Non-map argument provided. Ignored."
-                continue;
+                continue
 
             # TODO: add more commands and arguments for commands that take them.
             match cmd_name:
@@ -156,10 +167,14 @@ class Reolink(Camera, EasyResource):
                     time.sleep(4)
                     result[cmd_name] = ret
                 case "ptz_add_preset":
-                    ret = self.camera.add_preset(preset=int(parsed_args["id"]), name=int(parsed_args["name"]))
+                    ret = self.camera.add_preset(
+                        preset=int(parsed_args["id"]), name=int(parsed_args["name"])
+                    )
                     result[cmd_name] = ret
                 case "ptz_remove_preset":
-                    ret = self.camera.remove_preset(preset=int(parsed_args["id"]), name=int(parsed_args["name"]))
+                    ret = self.camera.remove_preset(
+                        preset=int(parsed_args["id"]), name=int(parsed_args["name"])
+                    )
                     result[cmd_name] = ret
                 case "ptz_perform_calibration":
                     ret = self.camera.perform_calibration()
@@ -194,18 +209,23 @@ class Reolink(Camera, EasyResource):
                     ret = self.camera.get_zoom_focus()
                     result[cmd_name]["result"] = ret
                 case "start_zoom_pos":
-                    ret = self.camera.start_zoom_pos(position=int(parsed_args["position"]))
+                    ret = self.camera.start_zoom_pos(
+                        position=int(parsed_args["position"])
+                    )
                     result[cmd_name]["result"] = ret
                 case "start_focus_pos":
-                    ret = self.camera.start_focus_pos(position=int(parsed_args["position"]))
+                    ret = self.camera.start_focus_pos(
+                        position=int(parsed_args["position"])
+                    )
                     result[cmd_name]["result"] = ret
                 case "get_auto_focus":
                     ret = self.camera.get_auto_focus()
                     result[cmd_name]["result"] = ret
                 case "set_auto_focus":
-                    ret = self.camera.set_auto_focus(disable=bool(parsed_args["disable"]))
+                    ret = self.camera.set_auto_focus(
+                        disable=bool(parsed_args["disable"])
+                    )
                     result[cmd_name]["result"] = ret
-        
 
                 case _:
                     result[cmd_name]["error"] = f"Unknown command: {command}"
@@ -217,7 +237,7 @@ class Reolink(Camera, EasyResource):
         *,
         extra: Optional[Dict[str, Any]] = None,
         timeout: Optional[float] = None,
-        **kwargs
+        **kwargs,
     ) -> Tuple[bytes, str]:
         raise NotImplementedError()
 
@@ -226,6 +246,6 @@ class Reolink(Camera, EasyResource):
     ) -> Camera.Properties:
         raise NotImplementedError()
 
+
 if __name__ == "__main__":
     asyncio.run(Module.run_from_registry())
-
