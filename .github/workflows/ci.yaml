@@ -46,11 +46,12 @@ jobs:
       # actions/checkout@v7.0.1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
-      # 3.11 is the Python that Raspberry Pi OS Bookworm ships.
+      # 3.12 matches PYTHON_VERSION in setup.sh, which builds the module;
+      # reolinkapi 0.4 requires Python 3.12.4 or newer.
       # actions/setup-python@v7.0.0
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
-          python-version: '3.11'
+          python-version: '3.12'
           cache: pip
 
       - name: Install dependencies
