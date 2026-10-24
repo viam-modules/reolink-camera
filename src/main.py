@@ -6,7 +6,7 @@ from typing import Any, ClassVar, Dict, Final, List, Mapping, Optional, Sequence
 from PIL import Image
 from reolinkapi import Camera as ReolinkCamera
 from typing_extensions import Self
-from viam.components.camera import *
+from viam.components.camera import Camera
 from viam.components.component_base import ValueTypes
 from viam.media.utils.pil import pil_to_viam_image
 from viam.media.video import CameraMimeType, NamedImage, ViamImage
