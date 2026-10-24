@@ -3,23 +3,20 @@ import logging
 import time
 from typing import Any, ClassVar, Dict, Final, List, Mapping, Optional, Sequence, Tuple
 
+from PIL import Image
+from reolinkapi import Camera as ReolinkCamera
 from typing_extensions import Self
 from viam.components.camera import *
-from viam.media.video import NamedImage, ViamImage, CameraMimeType
+from viam.components.component_base import ValueTypes
 from viam.media.utils.pil import pil_to_viam_image
+from viam.media.video import CameraMimeType, NamedImage, ViamImage
 from viam.module.module import Module
 from viam.proto.app.robot import ComponentConfig
 from viam.proto.common import ResourceName, ResponseMetadata
-from viam.proto.component.camera import GetPropertiesResponse
-from viam.components.component_base import ValueTypes
 from viam.resource.base import ResourceBase
 from viam.resource.easy_resource import EasyResource
 from viam.resource.types import Model, ModelFamily
-from logging import getLogger
-from reolinkapi import Camera as ReolinkCamera
 from viam.utils import struct_to_dict
-from PIL import Image
-from viam.resource.registry import Registry, ResourceCreatorRegistration
 
 
 class Reolink(Camera, EasyResource):
