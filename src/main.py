@@ -27,9 +27,7 @@ class Reolink(Camera, EasyResource):
     debug: bool = False
 
     @classmethod
-    def new(
-        cls, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]
-    ) -> Self:
+    def new(cls, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]) -> Self:
         my_class = cls(config.name)
         my_class.reconfigure(config, dependencies)
         return my_class
@@ -37,20 +35,12 @@ class Reolink(Camera, EasyResource):
     @classmethod
     def validate_config(cls, config: ComponentConfig) -> Sequence[str]:
         attributes = struct_to_dict(config.attributes)
-        if (
-            "host" not in attributes
-            or "username" not in attributes
-            or "password" not in attributes
-        ):
-            raise ValueError(
-                "Missing required fields in config: 'host', 'username', and 'password' are required."
-            )
+        if "host" not in attributes or "username" not in attributes or "password" not in attributes:
+            raise ValueError("Missing required fields in config: 'host', 'username', and 'password' are required.")
 
         return []
 
-    def reconfigure(
-        self, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]
-    ):
+    def reconfigure(self, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]):
         if self.camera is not None:
             self.camera.logout()
             self.camera = None
@@ -60,10 +50,7 @@ class Reolink(Camera, EasyResource):
 
         try:
             self.camera = ReolinkCamera(
-                attributes["host"],
-                attributes["username"],
-                attributes["password"],
-                attributes.get("https", False),
+                attributes["host"], attributes["username"], attributes["password"], attributes.get("https", False)
             )
             # Test the connection
             self.camera.login()
@@ -74,12 +61,7 @@ class Reolink(Camera, EasyResource):
         return self
 
     async def get_image(
-        self,
-        mime_type: str = "",
-        *,
-        extra: Optional[Dict[str, Any]] = None,
-        timeout: Optional[float] = None,
-        **kwargs,
+        self, mime_type: str = "", *, extra: Optional[Dict[str, Any]] = None, timeout: Optional[float] = None, **kwargs
     ) -> ViamImage:
         # TODO: check if camera is connected? not sure if this is needed of the library handles it
 
@@ -87,9 +69,7 @@ class Reolink(Camera, EasyResource):
         image_data: Image.Image = self.camera.get_snap()
 
         if self.debug:
-            self.LOGGER.warning(
-                f"get_snap() took {time.time() - start_time:.2f} seconds"
-            )
+            self.LOGGER.warning(f"get_snap() took {time.time() - start_time:.2f} seconds")
             self.LOGGER.warning(
                 f"Received image mime type: {image_data.format}, mode: {image_data.mode}, data size: {len(image_data.tobytes())} bytes"
             )
@@ -106,11 +86,7 @@ class Reolink(Camera, EasyResource):
 
     # Exposes select commands from Reolink API as documented at https://drive.google.com/file/d/1KvPbjRVqsgCEzJsUS--zEyxw6cP-pkSI/view?usp=sharing.
     async def do_command(
-        self,
-        command: Mapping[str, ValueTypes],
-        *,
-        timeout: Optional[float] = None,
-        **kwargs,
+        self, command: Mapping[str, ValueTypes], *, timeout: Optional[float] = None, **kwargs
     ) -> Dict[str, Any]:
 
         result = {}
@@ -123,9 +99,7 @@ class Reolink(Camera, EasyResource):
             if isinstance(cmd_args, Mapping):
                 parsed_args = cmd_args
             else:
-                self.logger.warning(
-                    f"received non-map do_command arguments for {cmd_name}, skipping this command."
-                )
+                self.logger.warning(f"received non-map do_command arguments for {cmd_name}, skipping this command.")
                 result[cmd_name]["error"] = "Non-map argument provided. Ignored."
                 continue
 
@@ -164,14 +138,10 @@ class Reolink(Camera, EasyResource):
                     time.sleep(4)
                     result[cmd_name] = ret
                 case "ptz_add_preset":
-                    ret = self.camera.add_preset(
-                        preset=int(parsed_args["id"]), name=int(parsed_args["name"])
-                    )
+                    ret = self.camera.add_preset(preset=int(parsed_args["id"]), name=int(parsed_args["name"]))
                     result[cmd_name] = ret
                 case "ptz_remove_preset":
-                    ret = self.camera.remove_preset(
-                        preset=int(parsed_args["id"]), name=int(parsed_args["name"])
-                    )
+                    ret = self.camera.remove_preset(preset=int(parsed_args["id"]), name=int(parsed_args["name"]))
                     result[cmd_name] = ret
                 case "ptz_perform_calibration":
                     ret = self.camera.perform_calibration()
@@ -206,22 +176,16 @@ class Reolink(Camera, EasyResource):
                     ret = self.camera.get_zoom_focus()
                     result[cmd_name]["result"] = ret
                 case "start_zoom_pos":
-                    ret = self.camera.start_zoom_pos(
-                        position=int(parsed_args["position"])
-                    )
+                    ret = self.camera.start_zoom_pos(position=int(parsed_args["position"]))
                     result[cmd_name]["result"] = ret
                 case "start_focus_pos":
-                    ret = self.camera.start_focus_pos(
-                        position=int(parsed_args["position"])
-                    )
+                    ret = self.camera.start_focus_pos(position=int(parsed_args["position"]))
                     result[cmd_name]["result"] = ret
                 case "get_auto_focus":
                     ret = self.camera.get_auto_focus()
                     result[cmd_name]["result"] = ret
                 case "set_auto_focus":
-                    ret = self.camera.set_auto_focus(
-                        disable=bool(parsed_args["disable"])
-                    )
+                    ret = self.camera.set_auto_focus(disable=bool(parsed_args["disable"]))
                     result[cmd_name]["result"] = ret
 
                 case _:
@@ -230,17 +194,11 @@ class Reolink(Camera, EasyResource):
         return result
 
     async def get_point_cloud(
-        self,
-        *,
-        extra: Optional[Dict[str, Any]] = None,
-        timeout: Optional[float] = None,
-        **kwargs,
+        self, *, extra: Optional[Dict[str, Any]] = None, timeout: Optional[float] = None, **kwargs
     ) -> Tuple[bytes, str]:
         raise NotImplementedError()
 
-    async def get_properties(
-        self, *, timeout: Optional[float] = None, **kwargs
-    ) -> Camera.Properties:
+    async def get_properties(self, *, timeout: Optional[float] = None, **kwargs) -> Camera.Properties:
         raise NotImplementedError()
 
 
