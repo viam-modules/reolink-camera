@@ -1,41 +1,33 @@
 import asyncio
 import logging
 import time
-from typing import (Any, ClassVar, Dict, Final, List, Mapping, Optional,
-                    Sequence, Tuple)
+from typing import Any, ClassVar, Dict, Final, List, Mapping, Optional, Sequence, Tuple
 
+from PIL import Image
+from reolinkapi import Camera as ReolinkCamera
 from typing_extensions import Self
-from viam.components.camera import *
-from viam.media.video import NamedImage, ViamImage, CameraMimeType
+from viam.components.camera import Camera
+from viam.components.component_base import ValueTypes
 from viam.media.utils.pil import pil_to_viam_image
+from viam.media.video import CameraMimeType, NamedImage, ViamImage
 from viam.module.module import Module
 from viam.proto.app.robot import ComponentConfig
 from viam.proto.common import ResourceName, ResponseMetadata
-from viam.proto.component.camera import GetPropertiesResponse
-from viam.components.component_base import ValueTypes
 from viam.resource.base import ResourceBase
 from viam.resource.easy_resource import EasyResource
 from viam.resource.types import Model, ModelFamily
-from logging import getLogger
-from reolinkapi import Camera as ReolinkCamera
 from viam.utils import struct_to_dict
-from PIL import Image
-from viam.resource.registry import Registry, ResourceCreatorRegistration
 
 
 class Reolink(Camera, EasyResource):
-    MODEL: ClassVar[Model] = Model(
-        ModelFamily("viam", "camera"), "reolink"
-    )
+    MODEL: ClassVar[Model] = Model(ModelFamily("viam", "camera"), "reolink")
     LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
-    
+
     camera: ReolinkCamera = None
     debug: bool = False
-    
+
     @classmethod
-    def new(
-        cls, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]
-    ) -> Self:
+    def new(cls, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]) -> Self:
         my_class = cls(config.name)
         my_class.reconfigure(config, dependencies)
         return my_class
@@ -43,51 +35,45 @@ class Reolink(Camera, EasyResource):
     @classmethod
     def validate_config(cls, config: ComponentConfig) -> Sequence[str]:
         attributes = struct_to_dict(config.attributes)
-        if 'host' not in attributes or 'username' not in attributes or 'password' not in attributes:
+        if "host" not in attributes or "username" not in attributes or "password" not in attributes:
             raise ValueError("Missing required fields in config: 'host', 'username', and 'password' are required.")
-        
+
         return []
 
-    def reconfigure(
-        self, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]
-    ):
+    def reconfigure(self, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]):
         if self.camera is not None:
             self.camera.logout()
             self.camera = None
-        
+
         attributes = struct_to_dict(config.attributes)
-        self.debug = attributes['debug']
-        
+        self.debug = attributes["debug"]
+
         try:
-            self.camera = ReolinkCamera(attributes['host'], 
-                                      attributes['username'], 
-                                      attributes['password'], 
-                                      attributes.get('https', False))
+            self.camera = ReolinkCamera(
+                attributes["host"], attributes["username"], attributes["password"], attributes.get("https", False)
+            )
             # Test the connection
             self.camera.login()
         except Exception as e:
             self.LOGGER.error(f"Failed to connect to Reolink camera: {str(e)}")
             raise RuntimeError(f"Failed to initialize Reolink camera: {str(e)}")
-        
+
         return self
 
     async def get_image(
-        self,
-        mime_type: str = "",
-        *,
-        extra: Optional[Dict[str, Any]] = None,
-        timeout: Optional[float] = None,
-        **kwargs
+        self, mime_type: str = "", *, extra: Optional[Dict[str, Any]] = None, timeout: Optional[float] = None, **kwargs
     ) -> ViamImage:
         # TODO: check if camera is connected? not sure if this is needed of the library handles it
-        
+
         start_time = time.time()
         image_data: Image.Image = self.camera.get_snap()
-        
+
         if self.debug:
             self.LOGGER.warning(f"get_snap() took {time.time() - start_time:.2f} seconds")
-            self.LOGGER.warning(f"Received image mime type: {image_data.format}, mode: {image_data.mode}, data size: {len(image_data.tobytes())} bytes")
-            
+            self.LOGGER.warning(
+                f"Received image mime type: {image_data.format}, mode: {image_data.mode}, data size: {len(image_data.tobytes())} bytes"
+            )
+
         viam_image = pil_to_viam_image(image_data, CameraMimeType.JPEG)
 
         return viam_image
@@ -100,11 +86,7 @@ class Reolink(Camera, EasyResource):
 
     # Exposes select commands from Reolink API as documented at https://drive.google.com/file/d/1KvPbjRVqsgCEzJsUS--zEyxw6cP-pkSI/view?usp=sharing.
     async def do_command(
-        self,
-        command: Mapping[str, ValueTypes],
-        *,
-        timeout: Optional[float] = None,
-        **kwargs
+        self, command: Mapping[str, ValueTypes], *, timeout: Optional[float] = None, **kwargs
     ) -> Dict[str, Any]:
 
         result = {}
@@ -112,14 +94,14 @@ class Reolink(Camera, EasyResource):
         for cmd_name, cmd_args in command.items():
             self.logger.info(f"command: {cmd_name}, args: {cmd_args}")
             result[cmd_name] = {}
-            
+
             parsed_args = {}
             if isinstance(cmd_args, Mapping):
                 parsed_args = cmd_args
             else:
                 self.logger.warning(f"received non-map do_command arguments for {cmd_name}, skipping this command.")
                 result[cmd_name]["error"] = "Non-map argument provided. Ignored."
-                continue;
+                continue
 
             # TODO: add more commands and arguments for commands that take them.
             match cmd_name:
@@ -205,7 +187,6 @@ class Reolink(Camera, EasyResource):
                 case "set_auto_focus":
                     ret = self.camera.set_auto_focus(disable=bool(parsed_args["disable"]))
                     result[cmd_name]["result"] = ret
-        
 
                 case _:
                     result[cmd_name]["error"] = f"Unknown command: {command}"
@@ -213,19 +194,13 @@ class Reolink(Camera, EasyResource):
         return result
 
     async def get_point_cloud(
-        self,
-        *,
-        extra: Optional[Dict[str, Any]] = None,
-        timeout: Optional[float] = None,
-        **kwargs
+        self, *, extra: Optional[Dict[str, Any]] = None, timeout: Optional[float] = None, **kwargs
     ) -> Tuple[bytes, str]:
         raise NotImplementedError()
 
-    async def get_properties(
-        self, *, timeout: Optional[float] = None, **kwargs
-    ) -> Camera.Properties:
+    async def get_properties(self, *, timeout: Optional[float] = None, **kwargs) -> Camera.Properties:
         raise NotImplementedError()
+
 
 if __name__ == "__main__":
     asyncio.run(Module.run_from_registry())
-
