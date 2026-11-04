@@ -1,5 +1,5 @@
 setuptools
-viam-sdk==0.82.0
+viam-sdk==0.85.1
 reolinkapi
 typing-extensions
 Pillow
